@@ -41,16 +41,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
   Map<String, String> infos = {};
+  late Future<void> _fetchWeatherDataFuture;
 
 
   @override
   void initState() {
     super.initState();
-    fetchWeatherData();
+    _fetchWeatherDataFuture = fetchWeatherData();
   }
 
   Future<void> fetchWeatherData() async {
     final url = 'https://api.openweathermap.org/data/2.5/onecall?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric';
+    print(url);
 
     final response = await http.get(Uri.parse(url));
 
@@ -91,13 +93,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String getWeatherIcon(String description) {
     if (description.toLowerCase().contains('clear')) {
-      return 'assets/sun.jpg';
+      return '01d.png';
     } else if (description.toLowerCase().contains('clouds')) {
-      return 'assets/cloudy.png';
+      return '03d.png';
     } else if (description.toLowerCase().contains('rain')) {
-      return 'assets/rain.jpg';
+      return '09d.png';
     } else {
-      return 'assets/default.png';
+      return '01d.png';
     }
   }
 
@@ -107,34 +109,47 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text('Weather App'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Image.asset(
-              weatherIcon,
-              width: 50,
-              height: 50,
-            ),
-            Text('Weather: $weatherDescription'),
-            Text('Temperature: $temperature°C'),
-            Column(
-              children: infos.entries.map((entry) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: [
-                      Text(entry.key + ": ", style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text(entry.value),
+      body: SingleChildScrollView(
+        child: Center(
+            child: FutureBuilder(
+              future: _fetchWeatherDataFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Image.network(
+                        "https://openweathermap.org/img/wn/$weatherIcon",
+                        width: 50,
+                        height: 50,
+                      ),
+                      Text('Weather: $weatherDescription'),
+                      Text('Temperature: $temperature°C'),
+                      Column(
+                        children: infos.entries.map((entry) {
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                Text(entry.key + ": ", style: TextStyle(fontWeight: FontWeight.bold)),
+                                Text(entry.value),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+
                     ],
-                    ),
                   );
-              }).toList(),
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
+
             ),
-
-
-          ],
-        ),
+          ),
       ),
     );
   }
